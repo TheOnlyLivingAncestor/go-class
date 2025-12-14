@@ -27,8 +27,6 @@ func channelBroadcast(ctx context.Context, input <-chan any, outputs []chan<- an
 				for _, ch := range outputs {
 					ch <- v
 				}
-			default:
-
 			}
 		}
 
