@@ -5,5 +5,5 @@ package messagequeue
 
 // messagequeue returns the an array constructed from the arguments
 func messageQueue(a, b, c string) [3]string {
-	// INSERT YOUR CODE HERE
+	return [3]string{c, a, b}
 }
