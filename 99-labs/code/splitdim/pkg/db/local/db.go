@@ -2,11 +2,11 @@ package local
 
 import (
 	"errors"
-	"math"
 	"sort"
 	"sync"
 
 	"splitdim/pkg/api"
+	"splitdim/pkg/clear"
 )
 
 // localDB a simple implementation of the DataLayer API.
@@ -71,29 +71,13 @@ func (db *localDB) Clear() ([]api.Transfer, error) {
 	if sum != 0 {
 		return nil, errors.New("Database is inconsistent")
 	}
-
 	tempAcc := copyMap(db.accounts)
 	db.mu.RUnlock()
-	transfers := []api.Transfer{}
-	for sender, balance := range tempAcc {
-		if balance < 0 {
-			for receiver, receiverBalance := range tempAcc {
-				if receiverBalance > 0 {
-					float_balance := math.Abs(float64(balance))
-					float_receiverBalance := math.Abs(float64(receiverBalance))
-					//compute the minimum of the balances of the sender and receiver and store it in transferAmount
-					transferAmount := math.Min(float_balance, float_receiverBalance)
-					transfers = append(transfers, api.Transfer{Sender: sender, Receiver: receiver, Amount: int(transferAmount)})
-					tempAcc[sender] += int(transferAmount)
-					tempAcc[receiver] -= int(transferAmount)
-					if tempAcc[sender] == 0 {
-						break
-					}
-				}
-			}
-		}
+	//Call the Clear function from clear package
+	transfers, err := clear.Clear(tempAcc)
+	if err != nil {
+		return []api.Transfer{}, err
 	}
-
 	return transfers, nil
 }
 

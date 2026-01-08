@@ -18,7 +18,8 @@ spec:
     spec:
       containers:
       - name: kvstore
-        image: localhost/kvstore
+        image: kvstore:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8081
           name: http-kvstore
@@ -52,7 +53,6 @@ spec:
   - name: http-kvstore
     port: 8081
     protocol: TCP
-    name: kvstore
 
 ---
 apiVersion: v1

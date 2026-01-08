@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: splitdim
+  labels:
+    app: splitdim
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: splitdim
+  template:
+    metadata:
+      labels:
+        app: splitdim
+    spec:
+      containers:
+      - name: splitdim
+        image: splitdim:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KVSTORE_MODE
+          value: kvstore
+        - name: KVSTORE_ADDR
+          value: "kvstore.default:8081"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: splitdim
+  labels:
+    app: splitdim
+spec:
+  selector:
+    app: splitdim
+  type: LoadBalancer
+  ports:
+  - name: http-port
+    port: 80
+    protocol: TCP
+    targetPort: 8080
