@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"splitdim/pkg/api"
 	"splitdim/pkg/db/kvstore"
 	"splitdim/pkg/db/local"
+	"syscall"
+	"time"
 )
 
 var db api.DataLayer
@@ -119,6 +123,15 @@ func ResetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func startServer(s *http.Server) {
+	log.Println("Server listening on http://:8080")
+	err := s.ListenAndServe()
+	// http.ErrServerClosed should not be logged to the user
+	if err != nil && err != http.ErrServerClosed {
+		log.Fatalf("HTTP server error %v", err)
+	}
+}
+
 func main() {
 	// Set the default logger to a fancier log format.
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -149,7 +162,22 @@ func main() {
 	http.HandleFunc("/api/accounts", AccountListHandler)
 	http.HandleFunc("/api/clear", ClearHandler)
 	http.HandleFunc("/api/reset", ResetHandler)
-	log.Println("Server listening on http://:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	//The already existing server should be moved to a goroutine for the graceful shutdown
+	s := &http.Server{Addr: ":8080"}
+	// Start the server in the goroutine
+	go startServer(s)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	log.Println("Shutdown signal received")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	err := s.Shutdown(ctx)
+	if err != nil {
+		log.Printf("Graceful server shutdown failed with error %v", err)
+	} else {
+		log.Println("Graceful server sutdown succeeded")
+	}
 
 }

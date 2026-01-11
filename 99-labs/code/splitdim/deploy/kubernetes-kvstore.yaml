@@ -14,6 +14,7 @@ spec:
       labels:
         app: splitdim
     spec:
+      terminationGracePeriodSeconds: 600
       containers:
       - name: splitdim
         image: splitdim:latest
