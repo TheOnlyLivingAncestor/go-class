@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -160,11 +161,24 @@ func main() {
 	// Set the default logger to a fancier log format.
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
+	//Setting up flags
+	var kvStoreModeFlag string
+	var kvStoreAddrFlag string
+	flag.StringVar(&kvStoreModeFlag, "mode", "local", "Specifies which storage layer to use")
+	flag.StringVar(&kvStoreAddrFlag, "addr", "localhost:8081", "Specifies the address of storage layer, only relevant if key-value storage is chosen")
+
+	//Parsing the flags
+	flag.Parse()
+
 	if os.Getenv("KVSTORE_MODE") != "" {
 		KVStoreMode = os.Getenv("KVSTORE_MODE")
+	} else {
+		KVStoreMode = kvStoreModeFlag
 	}
 	if os.Getenv("KVSTORE_ADDR") != "" {
 		KVStoreAddr = os.Getenv("KVSTORE_ADDR")
+	} else {
+		KVStoreAddr = kvStoreAddrFlag
 	}
 	switch KVStoreMode {
 	case "kvstore":
