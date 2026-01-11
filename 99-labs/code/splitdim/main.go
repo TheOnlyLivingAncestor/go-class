@@ -98,6 +98,7 @@ func ClearHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to marshal response with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "API request failed: %s", err)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(json)
@@ -106,6 +107,29 @@ func ClearHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
+}
+
+func HealthzHandler(w http.ResponseWriter, r *http.Request) {
+	//This handler should only accept GET requests
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	json, err := json.Marshal("OK")
+	if err != nil {
+		log.Printf("Failed to marshal response with error %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "API request failed: %s", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(json)
+	if err != nil {
+		log.Printf("Failed to write response with error %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // ResetHandler is a HTTP handler that allows to zero out all balances.
@@ -162,6 +186,7 @@ func main() {
 	http.HandleFunc("/api/accounts", AccountListHandler)
 	http.HandleFunc("/api/clear", ClearHandler)
 	http.HandleFunc("/api/reset", ResetHandler)
+	http.HandleFunc("/healthz", HealthzHandler)
 	//The already existing server should be moved to a goroutine for the graceful shutdown
 	s := &http.Server{Addr: ":8080"}
 	// Start the server in the goroutine

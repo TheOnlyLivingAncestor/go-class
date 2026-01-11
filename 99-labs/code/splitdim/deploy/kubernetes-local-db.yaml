@@ -18,6 +18,12 @@ spec:
       containers:
       - name: splitdim
         image: localhost/splitdim
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 2
 ---
 apiVersion: v1
 kind: Service

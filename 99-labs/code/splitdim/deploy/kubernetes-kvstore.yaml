@@ -26,6 +26,12 @@ spec:
           value: kvstore
         - name: KVSTORE_ADDR
           value: "kvstore.default:8081"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 2
 ---
 apiVersion: v1
 kind: Service
