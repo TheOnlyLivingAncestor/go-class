@@ -29,12 +29,14 @@ func TransferHandler(w http.ResponseWriter, r *http.Request) {
 	var request_body api.Transfer
 	err := json.NewDecoder(r.Body).Decode(&request_body)
 	if err != nil {
+		log.Printf("Transfer request body decoding failed with error %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	log.Printf("Transfer request arrived with body %v", request_body)
 	dbError := db.Transfer(request_body)
 	if dbError != nil {
+		log.Printf("Database error during Transfer request  %v", dbError)
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "API request failed: %s", dbError)
 	}
@@ -51,12 +53,14 @@ func AccountListHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Accounts request arrived")
 	accountsList, err := db.AccountList()
 	if err != nil {
+		log.Printf("AccountList retrieval failed with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "API request failed: %s", err)
 		return
 	}
 	json, err := json.Marshal(accountsList)
 	if err != nil {
+		log.Printf("AccountList marshal failed with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "API request failed: %s", err)
 		return
@@ -64,6 +68,7 @@ func AccountListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(json)
 	if err != nil {
+		log.Printf("Failed to write response with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
@@ -79,18 +84,21 @@ func ClearHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Clear request arrived")
 	transfers, err := db.Clear()
 	if err != nil {
+		log.Printf("Failed to retrieve required transfers from database with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "API request failed: %s", err)
 		return
 	}
 	json, err := json.Marshal(transfers)
 	if err != nil {
+		log.Printf("Failed to marshal response with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "API request failed: %s", err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(json)
 	if err != nil {
+		log.Printf("Failed to write response with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
@@ -106,6 +114,7 @@ func ResetHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Reset request arrived")
 	err := db.Reset()
 	if err != nil {
+		log.Printf("Failed to reset database with error %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }

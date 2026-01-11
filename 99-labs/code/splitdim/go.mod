@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/stretchr/testify v1.11.1
 	kvstore v0.0.0-00010101000000-000000000000
+	resilient v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -16,3 +17,5 @@ require (
 replace kvstore => ../kvstore
 
 replace transactionlog => ../transactionlog
+
+replace resilient => ../resilient

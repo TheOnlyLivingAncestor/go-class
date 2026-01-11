@@ -5,10 +5,11 @@ import (
 	"fmt"
 	clientapi "kvstore/pkg/api"
 	"kvstore/pkg/client"
-	"strconv"
-
+	"resilient"
 	"splitdim/pkg/api"
 	"splitdim/pkg/clear"
+	"strconv"
+	"time"
 )
 
 type kvstore struct {
@@ -34,20 +35,47 @@ func (db *kvstore) setBalance(user string, amount int) error {
 	return nil
 }
 
+func (db *kvstore) setBalanceForUser(user string, amount int) resilient.Closure {
+	return func() error { return db.setBalance(user, amount) }
+}
+
 func (db *kvstore) Transfer(t api.Transfer) error {
 	if t.Sender == t.Receiver || t.Sender == "" || t.Receiver == "" {
 		return errors.New("Invalid transfer")
 	}
-	for {
-		err := db.setBalance(t.Receiver, -t.Amount)
-		if err == nil {
-			break
-		}
+	var defaultBackoff = resilient.Backoff{
+		Base:      150 * time.Millisecond,
+		NumTrials: 6,
+		Cap:       2 * time.Second,
+		Jitter:    3,
 	}
-	for {
-		err := db.setBalance(t.Sender, t.Amount)
-		if err == nil {
-			break
+
+	//Transfer for sender
+	var senderBalanceClosure = db.setBalanceForUser(t.Sender, t.Amount)
+	var decoratedSenderBalanceClosure = resilient.WithRetry(senderBalanceClosure, defaultBackoff)
+	err := decoratedSenderBalanceClosure()
+	if err != nil {
+		return err
+	}
+
+	//Transfer for receiver
+	var receiverBalanceClosure = db.setBalanceForUser(t.Receiver, -t.Amount)
+	var decoratedReceiverBalanceClosure = resilient.WithRetry(receiverBalanceClosure, defaultBackoff)
+	err = decoratedReceiverBalanceClosure()
+	if err != nil {
+		//Undo the first operation? t.Sender, -t.Amount?
+		//More agressive retry policy?
+		var aggressiveBackoff = resilient.Backoff{
+			Base:      100 * time.Millisecond,
+			NumTrials: 10,
+			Cap:       2 * time.Second,
+			Jitter:    2,
+		}
+		var senderUndoClosure = db.setBalanceForUser(t.Sender, -t.Amount)
+		var decoratedSenderUndoClosure = resilient.WithRetry(senderUndoClosure, aggressiveBackoff)
+		err = decoratedSenderUndoClosure()
+		if err != nil {
+			return err
 		}
 	}
 	return nil
