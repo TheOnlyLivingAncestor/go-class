@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: splitdim-config
+data:
+  kvstoreMode: "kvstore"
+  kvstoreAddr: "kvstore.default:8081"
